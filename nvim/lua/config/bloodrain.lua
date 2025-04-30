@@ -4,10 +4,17 @@ local M = {}
 local drops = {}
 local smears = {}
 local width = 80
-local height = 20
+local height = 8
 local drop_char = "🩸"
 local smear_char = "░"
 local timer = nil
+
+-- Dynamically injected rain section (will be placed by alpha.lua)
+M.rain_section = {
+  type = "text",
+  val = {},
+  opts = { position = "center", hl = "Comment" }
+}
 
 local function empty_screen()
   local lines = {}
@@ -23,14 +30,14 @@ local function update_screen()
   for _, smear in ipairs(smears) do
     if smear.y <= height then
       local line = lines[smear.y]
-      lines[smear.y] = line:sub(1, smear.x - 1) .. smear_char .. line:sub(smear.x + 1)
+      lines[smear.y] = vim.fn.strcharpart(line, 0, smear.x - 1) .. smear_char .. vim.fn.strcharpart(line, smear.x)
     end
   end
 
   for _, drop in ipairs(drops) do
     if drop.y <= height then
       local line = lines[drop.y]
-      lines[drop.y] = line:sub(1, drop.x - 1) .. drop_char .. line:sub(drop.x + 1)
+      lines[drop.y] = vim.fn.strcharpart(line, 0, drop.x - 1) .. drop_char .. vim.fn.strcharpart(line, drop.x)
       drop.y = drop.y + 1
     end
   end
@@ -46,7 +53,7 @@ local function update_screen()
     end
   end
 
-  if #smears > 1000 then
+  if #smears > 500 then
     for i = 1, 50 do
       table.remove(smears, 1)
     end
@@ -57,38 +64,12 @@ end
 
 function M.start_bloodrain()
   local ok, alpha = pcall(require, "alpha")
-  if not ok then
-    return
-  end
+  if not ok then return end
 
   local dashboard = require("alpha.themes.dashboard")
 
-  -- ⏳ Wait until dashboard.layout is ready
-  if not dashboard.layout then
-    vim.defer_fn(function()
-      M.start_bloodrain()
-    end, 100)
-    return
-  end
-
-  local function find_header(layout)
-    for _, section in ipairs(layout) do
-      if section.type == "text" then
-        return section
-      elseif section.type == "group" then
-        for _, item in ipairs(section.val) do
-          if item.type == "text" then
-            return item
-          end
-        end
-      end
-    end
-    return nil
-  end
-
-  local header = find_header(dashboard.layout)
-
-  if not header then
+  if not dashboard.opts or not dashboard.opts.layout then
+    vim.defer_fn(M.start_bloodrain, 100)
     return
   end
 
@@ -100,23 +81,15 @@ function M.start_bloodrain()
   timer = uv.new_timer()
   timer:start(0, 70, function()
     vim.schedule(function()
-      local frame = update_screen()
-      header.val = frame
-      alpha.setup(dashboard.opts)
+      M.rain_section.val = update_screen()
+
+      local current_buf = vim.api.nvim_get_current_buf()
+      local bufname = vim.api.nvim_buf_get_name(current_buf)
+      if bufname:match(".*Alpha.*") then
+        alpha.redraw()
+      end
     end)
   end)
 end
-
-vim.api.nvim_create_autocmd("User", {
-  pattern = "AlphaReady",
-  callback = function()
-    print("🩸 AlphaReady triggered!")
-    drops = {}
-    smears = {}
-    M.start_bloodrain()
-  end,
-})
-
-M.start_bloodrain()
 
 return M

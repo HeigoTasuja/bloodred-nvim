@@ -1,9 +1,6 @@
 local alpha = require("alpha")
 local dashboard = require("alpha.themes.dashboard")
 
--- Load BloodRain logic
-local bloodrain_ok, bloodrain = pcall(require, "config.bloodrain")
-
 -- Default static Bloody banner first
 dashboard.section.header.val = {
   " ███╗   ██╗██╗   ██╗██╗███╗   ███╗",
@@ -19,10 +16,10 @@ dashboard.section.header.val = {
 dashboard.section.buttons.val = {
   dashboard.button("SPC ff", "󰱼  Find File", ":Telescope find_files<CR>"),
   dashboard.button("SPC fg", "  Live Grep", ":Telescope live_grep<CR>"),
-  dashboard.button("SPC e",  "󰉋  Explorer", ":NvimTreeToggle<CR>"),
-  dashboard.button("SPC r",  "󰄉  Recent Files", ":Telescope oldfiles<CR>"),
-  dashboard.button("SPC s",  "󰆓  Settings", ":e $MYVIMRC<CR>"),
-  dashboard.button("q",      "󰅖  Quit", ":qa<CR>"),
+  dashboard.button("SPC e", "󰉋  Explorer", ":NvimTreeToggle<CR>"),
+  dashboard.button("SPC r", "󰄉  Recent Files", ":Telescope oldfiles<CR>"),
+  dashboard.button("SPC s", "󰆓  Settings", ":e $MYVIMRC<CR>"),
+  dashboard.button("q", "󰅖  Quit", ":qa<CR>"),
 }
 
 -- Random bloody quotes
@@ -67,18 +64,45 @@ local bloody_quotes = {
 math.randomseed(os.time())
 dashboard.section.footer.val = bloody_quotes[math.random(1, #bloody_quotes)]
 
--- Prevent autocommands during setup
+-- Disable auto commands during setup
 dashboard.opts.opts.noautocmd = true
 
--- Setup Alpha with BloodRain!
+-- Setup layout:
+-- [1] Padding
+-- [2] (Optional rain will be inserted here by bloodrain.lua)
+-- [3] Header
+-- [4] Padding
+-- [5] Buttons
+-- [6] Padding
+-- [7] Footer
+local bloodrain = require("config.bloodrain")
+
+dashboard.opts.layout = {
+  { type = "padding", val = 1 },
+  dashboard.section.header,
+  { type = "padding", val = 1 },
+  bloodrain.rain_section,
+  { type = "padding", val = 1 },
+  dashboard.section.buttons,
+  { type = "padding", val = 1 },
+  dashboard.section.footer,
+}
+
+-- Finalize Alpha
 alpha.setup(dashboard.opts)
 
--- AFTER Alpha is fully ready, start BloodRain
-if bloodrain_ok then
+-- Let bloodrain attach when Alpha is ready
+local ok, bloodrain = pcall(require, "config.bloodrain")
+if ok then
   vim.api.nvim_create_autocmd("User", {
     pattern = "AlphaReady",
     callback = function()
-      bloodrain.start_bloodrain()
+      vim.defer_fn(function()
+        bloodrain.start_bloodrain()
+      end, 100)
     end,
   })
 end
+
+-- Trigger AlphaReady manually for clean startup
+vim.api.nvim_exec_autocmds("User", { pattern = "AlphaReady" })

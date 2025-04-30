@@ -1,5 +1,11 @@
 local uv = vim.loop
-local api = vim.api
+local M = {}
+
+M.storm_section = {
+  type = "text",
+  val = {},
+  opts = { position = "center", hl = "Constant" },
+}
 
 local frames = {
   {
@@ -34,29 +40,33 @@ local function animate_alpha_blood()
 
   timer:start(0, 700, function()
     vim.schedule(function()
-      dashboard.section.header.val = frames[i]
-      alpha.setup(dashboard.opts)
+      M.storm_section.val = frames[i]
+      alpha.redraw()
       i = i % #frames + 1
     end)
   end)
 end
 
 local function play_thunder_sound()
-  -- MacOS: 'afplay' can play sounds from terminal
-  vim.fn.jobstart({ "afplay", "/System/Library/Sounds/Submarine.aiff" }, { detach = true })
+  local thunder_path = vim.fn.stdpath("config") .. "/sounds/thunder.mp3"
+
+  if vim.fn.has("macunix") == 1 then
+    os.execute("afplay " .. thunder_path .. " &")
+  elseif vim.fn.has("unix") == 1 then
+    -- try mpv or ffplay on Linux
+    os.execute("mpv --no-terminal --volume=50 " .. thunder_path .. " &")
+  end
 end
 
 local function unleash_bloodstorm()
-  -- Play a thunder sound
   play_thunder_sound()
-
-  -- Animate the Alpha dashboard
   animate_alpha_blood()
-
-  -- Notify
   vim.schedule(function()
     vim.notify("🌩️ BloodStorm unleashed across your Neovim!", vim.log.levels.ERROR, { title = "🩸 BLOODSTORM" })
   end)
 end
 
+-- 🔥 Start storm on load
 unleash_bloodstorm()
+
+return M
