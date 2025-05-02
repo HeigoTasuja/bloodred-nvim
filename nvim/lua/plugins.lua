@@ -25,7 +25,13 @@ require("lazy").setup({
     { "L3MON4D3/LuaSnip" },
     { "lewis6991/gitsigns.nvim" },
     { "ThePrimeagen/harpoon" },
-    { "jose-elias-alvarez/null-ls.nvim" },
+    {
+      "nvimtools/none-ls.nvim",
+      dependencies = {
+        "nvim-lua/plenary.nvim",
+        "nvimtools/none-ls-extras.nvim",
+      },
+    },
     { "mfussenegger/nvim-dap" },
     { "folke/which-key.nvim" },
     { "goolord/alpha-nvim", dependencies = { "nvim-tree/nvim-web-devicons" } },
