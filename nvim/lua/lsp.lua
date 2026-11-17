@@ -1,4 +1,4 @@
-require("mason").setup()
-require("lspconfig").pyright.setup({})
-require('lspconfig').tsserver = nil
-require('lspconfig').ts_ls.setup({})
+vim.lsp.config("*", {
+  capabilities = require("cmp_nvim_lsp").default_capabilities(),
+})
+vim.lsp.enable({ "clangd", "pyright", "ts_ls" })

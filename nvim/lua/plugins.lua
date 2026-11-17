@@ -19,7 +19,7 @@ require("lazy").setup({
     { "neovim/nvim-lspconfig" },
     { "nvim-lualine/lualine.nvim" },
     { "EdenEast/nightfox.nvim" },
-    { "nvim-treesitter/nvim-treesitter", build = ":TSUpdate" },
+    { "nvim-treesitter/nvim-treesitter", branch = master, build = ":TSUpdate" },
     { "hrsh7th/nvim-cmp" },
     { "hrsh7th/cmp-nvim-lsp" },
     { "L3MON4D3/LuaSnip" },
